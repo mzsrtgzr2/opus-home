@@ -1,15 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Finding, Resource } from './models';
+
+
+// TODO: Fix tests to support injectable CONNECTION
 
 describe('AppController', () => {
   let appController: AppController;
 
   const mockFindingRepository = {
     findOne: jest.fn(),
+    findAndCount: jest.fn(),
     find: jest.fn(),
     save: jest.fn(),
   };
@@ -100,7 +104,7 @@ describe('AppController', () => {
   });
 
   describe('getAllFindingsByTenantID', () => {
-    it('should return all findings for a given tenantID', async () => {
+    it('should return paginated findings for a given tenantID', async () => {
       const tenantID = 'tenant123';
       const findings = [
         {
@@ -146,22 +150,17 @@ describe('AppController', () => {
           tenantID,
         },
       ];
-
-      mockFindingRepository.find.mockResolvedValue(findings as Finding[]);
-
-      const result = await appController.getAllFindingsByTenantID(tenantID);
-
-      expect(mockFindingRepository.find).toHaveBeenCalledWith({
+  
+      mockFindingRepository.findAndCount.mockResolvedValue([findings, findings.length]);
+  
+      const result = await appController.getAllFindingsByTenantID(tenantID, 1, 10);
+  
+      expect(mockFindingRepository.findAndCount).toHaveBeenCalledWith({
         where: { tenantID },
+        take: 10,
+        skip: 0,
       });
-      expect(result).toEqual({ success: true, data: findings });
-    });
-
-    it('should throw NotFoundException if no findings are found for a given tenantID', async () => {
-      const tenantID = 'tenant123';
-      mockFindingRepository.find.mockResolvedValue([] as Finding[]);
-
-      await expect(appController.getAllFindingsByTenantID(tenantID)).rejects.toThrowError(NotFoundException);
+      expect(result).toEqual({ success: true, data: findings, page: 1, totalCount: findings.length, totalPages: 1 });
     });
   });
 });

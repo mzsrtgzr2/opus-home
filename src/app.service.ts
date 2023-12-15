@@ -1,17 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Finding, Resource } from './models';
 
-@Injectable()
+@Injectable({scope: Scope.REQUEST})
 export class AppService {
-  constructor(
-    @InjectRepository(Finding)
-    private readonly findingRepository: Repository<Finding>,
-    @InjectRepository(Resource)
-    private readonly resourceRepository: Repository<Resource>,
-  ) {}
+  private readonly findingRepository: Repository<Finding>;
+  private readonly resourceRepository: Repository<Resource>;
 
+  constructor(@Inject('CONNECTION') connection) {
+    this.findingRepository = connection.getRepository(Finding);
+    this.resourceRepository = connection.getRepository(Resource);
+  }
+  
   async addFinding(newFinding: any): Promise<Finding | Error> {
     const existingFinding = await this.findingRepository.findOne({
       where: {
@@ -44,7 +44,24 @@ export class AppService {
     return await this.findingRepository.save(finding);
   }
 
-  async getAllFindingsByTenantID(tenantID: string): Promise<Finding[]> {
-    return await this.findingRepository.find({ where: { tenantID } });
+  async getAllFindingsByTenantID(
+    tenantID: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    items: Finding[];
+    page: number;
+    totalCount: number;
+    totalPages: number;
+  }> {
+    const [items, totalCount] = await this.findingRepository.findAndCount({
+      where: { tenantID },
+      take: limit,
+      skip: (page - 1) * limit,
+    });
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return { items, page, totalCount, totalPages };
   }
 }

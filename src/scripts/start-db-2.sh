@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-SERVER="my_database_server";
-PW="mysecretpassword";
-DB="my_database";
+SERVER="my_database_server_2";
+PW="mysecretpassword_2";
+DB="my_database_2";
 
 echo "echo stop & remove old docker [$SERVER] and starting new fresh instance of [$SERVER]"
 (docker kill $SERVER || :) && \

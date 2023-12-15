@@ -1,0 +1,27 @@
+default:
+  host: 127.0.0.1
+  port: 5431
+  database: public
+  username: postgres
+  password: mysecretpassword_1
+
+databases:
+  - name: db1
+    host: 127.0.0.1
+    port: 5431
+    database: public
+    username: postgres
+    password: mysecretpassword_1
+    tenants: [
+      tenant123
+    ]
+  - name: db2
+    host: 127.0.0.1
+    port: 5432
+    database: public
+    username: postgres
+    password: mysecretpassword_2
+    tenants: [
+      tenant2,
+    ]
+      
